@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Color Lab</title>
+
+<style>
+body {
+    margin: 0;
+    overflow: hidden;
+    background: #05070a;
+    font-family: Arial;
+    touch-action: none; /* важно для мобилы */
+}
+
+canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+#ui {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    z-index: 10;
+    color: white;
+}
+
+button {
+    padding: 10px 14px;
+    margin: 5px;
+    border: none;
+    border-radius: 10px;
+    background: #ffffff10;
+    color: white;
+    cursor: pointer;
+    border: 1px solid #ffffff20;
+    transition: 0.3s;
+}
+
+button:hover {
+    border-color: #4c8dff;
+}
+
+#mode {
+    margin-top: 10px;
+    opacity: 0.7;
+    font-size: 13px;
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="c"></canvas>
+
+<div id="ui">
+    <button onclick="toggleMode()">Change Mode</button>
+    <div id="mode">Mode: calm</div>
+</div>
+
+<script>
+
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener("resize", resize);
+
+let mode = "calm";
+let particles = [];
+
+// 🔥 ограничение чтобы не лагало на телефоне
+const MAX_PARTICLES = 300;
+
+function addParticle(x, y) {
+
+    if (particles.length > MAX_PARTICLES) {
+        particles.splice(0, 5);
+    }
+
+    particles.push({
+        x, y,
+        vx: (Math.random()-0.5) * 2,
+        vy: (Math.random()-0.5) * 2,
+        life: 100,
+        color: `hsl(${Math.random()*360}, 80%, 60%)`
+    });
+}
+
+// DRAW LOOP
+function draw() {
+    ctx.fillStyle = "rgba(5,7,10,0.2)";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    for (let p of particles) {
+
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life--;
+
+        if (mode === "bright") {
+            p.vx *= 1.01;
+            p.vy *= 1.01;
+        } else {
+            p.vx *= 0.98;
+            p.vy *= 0.98;
+        }
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 3, 0, Math.PI*2);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+    }
+
+    particles = particles.filter(p => p.life > 0);
+
+    requestAnimationFrame(draw);
+}
+
+draw();
+
+/* =========================
+   🖱 DESKTOP + 📱 MOBILE INPUT
+   ========================= */
+
+// mouse
+window.addEventListener("mousemove", (e) => {
+    addParticle(e.clientX, e.clientY);
+});
+
+// click
+window.addEventListener("click", (e) => {
+    for (let i=0;i<15;i++) {
+        addParticle(e.clientX, e.clientY);
+    }
+});
+
+// touch move (главное для телефона)
+window.addEventListener("touchmove", (e) => {
+    let t = e.touches[0];
+    addParticle(t.clientX, t.clientY);
+}, { passive: true });
+
+// touch start (burst эффект)
+window.addEventListener("touchstart", (e) => {
+    let t = e.touches[0];
+    for (let i=0;i<8;i++) {
+        addParticle(t.clientX, t.clientY);
+    }
+}, { passive: true });
+
+// mode switch
+function toggleMode() {
+    mode = (mode === "calm") ? "bright" : "calm";
+    document.getElementById("mode").innerText =
+        "Mode: " + mode;
+}
+
+</script>
+
+</body>
+</html>
